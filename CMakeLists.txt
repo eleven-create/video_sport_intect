@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(motion_detection)
-
+add_compile_options(/utf-8)
 set(CMAKE_CXX_STANDARD 11)
 
 # 【备用】如果CMake找不到OpenCV，就取消下面注释，改成你自己的OpenCV路径
