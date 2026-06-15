@@ -1,0 +1,14 @@
+# 编译产物
+build/
+Debug/
+Release/
+
+# VS 配置文件
+.vscode/
+*.suo
+*.user
+*.cache
+
+# 系统文件
+.DS_Store
+Thumbs.db
