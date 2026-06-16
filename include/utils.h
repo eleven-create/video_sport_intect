@@ -2,6 +2,9 @@
 #define UTILS_H
 #include <opencv2/opencv.hpp>
 #include <vector>
+#pragma once
+
+std::string zh(const std::string& utf8Str);
 
 // 绘制带标签的目标框
 void drawBox(cv::Mat& img, cv::Rect rect, const std::string& label, cv::Scalar color);
