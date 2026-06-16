@@ -1,7 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include "postprocess.h"
 using namespace cv;
 using namespace std;
+
 int main()
 {
     system("chcp 65001"); 
@@ -30,7 +32,7 @@ int main()
         // 放映室
         imshow("彩色原图", frame);
         imshow("黑白图", grayFrame);
-
+        testHSVShadow(frame);
         if (waitKey(30) == 27) {
             cout << "接收到 ESC 指令，程序退出。" << endl;
             break;
