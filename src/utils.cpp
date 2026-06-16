@@ -1,5 +1,9 @@
+#include <windows.h>
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <algorithm>
+#include <cstdio>
+
 
 // 绘制目标框
 void drawBox(cv::Mat& img, cv::Rect rect, const std::string& label, cv::Scalar color)
@@ -40,22 +44,94 @@ void drawBox(cv::Mat& img, cv::Rect rect, const std::string& label, cv::Scalar c
     //label:文字，textPos:文字位置，fontFace:字体类型，fontScale:字体缩放比例，cv::Scalar(255, 255, 255):字体、字号、白色，fontThickness:字体线宽
 }
 
+// 计算两个矩形框的IOU(IOU=交集面积/并集面积)
+float calcIOU(cv::Rect a, cv::Rect b)
+{
+    // 步骤1：求相交区域左上角x、y（取两个框更大的x、更大的y）
+    int inter_x1 = std::max(a.x, b.x);
+    int inter_y1 = std::max(a.y, b.y);
+
+    // 步骤2：求相交区域右下角x、y（取两个框更小的右下角坐标）
+    int inter_x2 = std::min(a.x + a.width, b.x + b.width);
+    int inter_y2 = std::min(a.y + a.height, b.y + b.height);
+
+    // 步骤3：计算相交矩形宽、高；如果宽/高小于0，代表无交集
+    int inter_w = inter_x2 - inter_x1;
+    int inter_h = inter_y2 - inter_y1;
+    if (inter_w <= 0 || inter_h <= 0)
+    {
+        // 无重叠，IOU直接为0
+        return 0.0f;
+    }
+
+    // 步骤4：相交面积
+    int inter_area = inter_w * inter_h;
+
+    // 步骤5：两个框各自总面积
+    int area_a = a.width * a.height;
+    int area_b = b.width * b.height;
+
+    // 步骤6：并集面积 = A面积 + B面积 - 相交面积
+    int union_area = area_a + area_b - inter_area;
+
+    // 步骤7：IOU = 相交面积 / 并集面积，转浮点返回
+    float iou = static_cast<float>(inter_area) / union_area;
+    return iou;
+}
+
+// 批量保存掩码图片到data目录
+void saveMask(const cv::Mat& mask, const std::string& path)
+{
+    // 找到最后一个分隔符 / 或 \,获取目录路径，创建目录（如果不存在）
+    size_t pos = path.find_last_of("/\\");
+    if (pos != std::string::npos)
+    {
+        std::string dir = path.substr(0, pos);
+        // Windows API创建单层文件夹
+        CreateDirectoryA(dir.c_str(), NULL);
+    }
+
+    bool ret = cv::imwrite(path, mask);
+    if (!ret)
+    {
+        printf("掩码保存失败，路径：%s\n", path.c_str());
+    }
+}
+
 // 测试主函数
 /*int main()
 {
-    // 创建测试图
-    cv::Mat img(600, 800, CV_8UC3, cv::Scalar(40, 40, 40));
-    
-    // 目标框坐标
-    cv::Rect targetRect(120, 150, 280, 320);
-    std::string tag = "person 0.95";
-    cv::Scalar boxColor(0, 255, 0); // 0蓝，255绿，0红->绿色框
+    // 1. 创建空白画布 高600，宽800，3通道灰色背景
+    cv::Mat canvas(600, 800, CV_8UC3, cv::Scalar(50, 50, 50));
 
-    // 调用绘制函数
-    drawBox(img, targetRect, tag, boxColor);
+    // 2. 定义两个重叠测试框，用来测试IOU计算
+    cv::Rect box1(100, 120, 220, 260);
+    cv::Rect box2(180, 160, 200, 240);
 
-    cv::imshow("drawBox Demo", img);
-    cv::waitKey(0);  //0代表无限等待
+    // 3. 调用drawBox绘制两个框，不同颜色+标签
+    drawBox(canvas, box1, "obj1 score:0.92", cv::Scalar(0, 255, 0));  // 绿色
+    drawBox(canvas, box2, "obj2 score:0.88", cv::Scalar(0, 0, 255));  // 红色
+
+    // 4. 计算并打印IOU
+    float iou_val = calcIOU(box1, box2);
+    printf("IOU of box1 and box2 = %.4f\n", iou_val);
+
+    // 5. 生成掩码图像（单通道二值掩码）
+    cv::Mat mask = cv::Mat::zeros(canvas.rows, canvas.cols, CV_8UC1);
+    // 在掩码上把box1区域涂成白色(255)，代表前景
+    cv::rectangle(mask, box1, cv::Scalar(255), -1);
+    // 保存掩码到 ./data/mask_test.png
+    std::string mask_path = "../../data/mask_test.png";
+    saveMask(mask, mask_path);
+    printf("Mask image saved to: %s\n", mask_path.c_str());
+
+    // 6. 窗口显示绘制好框的画布
+    cv::namedWindow("drawBox IOU Test", cv::WINDOW_AUTOSIZE);
+    cv::imshow("drawBox IOU Test", canvas);
+
+    // 7. 等待按键，防止窗口闪退
+    cv::waitKey(0);
     cv::destroyAllWindows();
+
     return 0;
 }*/
