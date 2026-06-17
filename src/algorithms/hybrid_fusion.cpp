@@ -12,7 +12,9 @@ void HybridFusion::processFrame(const cv::Mat& frame, cv::Mat& fgMask) {
     // ==========================================================
     // 步骤 1：空间级 - 背景掩码提取 (粗提取)
     // ==========================================================
-    pBackSub->apply(frame, rawMask);
+    // 第三个参数是 learningRate (0 到 1)。
+    // 默认是 -1 (自动)。设为 0.005 意味着背景更新得很慢，小偷停下几秒钟依然会被框住！
+    pBackSub->apply(frame, fgMask, 0.005); 
     // 二值化，将阴影(127)彻底变为0，只保留纯正前景(255)
     cv::threshold(rawMask, rawMask, 200, 255, cv::THRESH_BINARY);
 

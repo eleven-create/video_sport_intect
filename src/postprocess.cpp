@@ -64,3 +64,38 @@ void PostProcessor::mergeBoundingBoxes(std::vector<cv::Rect>& bboxes, int margin
         }
     }
 }
+void BoxSmoother::smoothBBoxes(std::vector<cv::Rect>& currentBBoxes) {
+    if (prevBBoxes.empty()) {
+        prevBBoxes = currentBBoxes;
+        return;
+    }
+
+    std::vector<cv::Rect> smoothedBoxes;
+    for (auto& currBox : currentBBoxes) {
+        bool matched = false;
+        for (auto& prevBox : prevBBoxes) {
+            // 计算两个框中心点的距离
+            cv::Point currCenter(currBox.x + currBox.width/2, currBox.y + currBox.height/2);
+            cv::Point prevCenter(prevBox.x + prevBox.width/2, prevBox.y + prevBox.height/2);
+            double dist = cv::norm(currCenter - prevCenter);
+
+            // 如果距离小于 50 像素，认为是同一个物体
+            if (dist < 50.0) {
+                // EMA 平滑公式 (0.6 的历史权重，0.4 的当前权重，让框的移动变得极其粘滞平滑)
+                cv::Rect sBox;
+                sBox.x = prevBox.x * 0.6 + currBox.x * 0.4;
+                sBox.y = prevBox.y * 0.6 + currBox.y * 0.4;
+                sBox.width = prevBox.width * 0.6 + currBox.width * 0.4;
+                sBox.height = prevBox.height * 0.6 + currBox.height * 0.4;
+                
+                smoothedBoxes.push_back(sBox);
+                matched = true;
+                break;
+            }
+        }
+        // 如果是新出现的物体，直接加入
+        if (!matched) smoothedBoxes.push_back(currBox);
+    }
+    prevBBoxes = smoothedBoxes; // 更新记忆
+    currentBBoxes = smoothedBoxes; // 输出平滑后的框
+}

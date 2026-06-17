@@ -27,3 +27,10 @@ public:
      */
     static void mergeBoundingBoxes(std::vector<cv::Rect>& bboxes, int margin = 20);
 };
+class BoxSmoother {
+private:
+    std::vector<cv::Rect> prevBBoxes; // 记忆上一帧的框
+public:
+    // 平滑处理函数
+    void smoothBBoxes(std::vector<cv::Rect>& currentBBoxes);
+};
