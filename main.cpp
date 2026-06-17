@@ -1,15 +1,48 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include "postprocess.h"
+#include "utils.h"
+#include <windows.h>
+using namespace cv;
+using namespace std;
 
 int main()
 {
-    cv::Mat img = cv::Mat::zeros(500, 800, CV_8UC3);
-    cv::circle(img, cv::Point(400, 250), 120, cv::Scalar(0, 255, 0), 3);
+    system("chcp 65001"); 
+    //打开摄像头
+    VideoCapture cap(0); 
+    
+    if (!cap.isOpened()) {
+        cout << zh("报告：摄像头打不开！请检查设备连接。") << endl;
+        return -1;
+    }
 
-    cv::imshow("OpenCV Test", img);
-    std::cout << "OpenCV 版本: " << CV_VERSION << std::endl;
+    Mat frame;      
+    Mat grayFrame;  
 
-    cv::waitKey(0);
-    cv::destroyAllWindows();
+    while (true) {
+        cap >> frame; 
+        
+        if (frame.empty()) {
+            cout << zh("读取不到画面，视频播放结束！") << endl;
+            break; 
+        }
+
+        // 转换为黑白图
+        cvtColor(frame, grayFrame, COLOR_BGR2GRAY);
+
+        // 进行放映
+        imshow(zh("彩色原图"), frame);
+        imshow(zh("黑白图"), grayFrame);
+        //放映HSV图片
+        testHSVShadow(frame);
+        if (waitKey(30) == 27) {
+            cout <<zh( "接收到 ESC 指令，程序退出。") << endl;
+            break;
+        }
+    }
+    
+    cap.release();
+    destroyAllWindows();
     return 0;
 }
