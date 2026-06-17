@@ -8,6 +8,7 @@
 #include "algorithms/bg_subtractor.h"
 #include "postprocess.h"
 #include "algorithms/optical_flow.h"
+#include "algorithms/hybrid_fusion.h"
 
 using namespace cv;
 using namespace std;
@@ -30,9 +31,10 @@ int main() {
     // 作为 Tier 1 的基线对比测试，你可以在这里自由取消注释来切换算法:
     // 
     //unique_ptr<BaseDetector> detector = make_unique<FrameDiff>(25);
-    unique_ptr<BaseDetector> detector = make_unique<BGSubtractor>("MOG2");
+    //unique_ptr<BaseDetector> detector = make_unique<BGSubtractor>("MOG2");
     //unique_ptr<BaseDetector> detector = make_unique<OpticalFlowTracker>();
     //unique_ptr<BaseDetector> detector = make_unique<BGSubtractor>("KNN");
+    unique_ptr<BaseDetector> detector = make_unique<HybridFusion>();
 
     Mat frame, fgMask;
     vector<Rect> bboxes;
@@ -60,6 +62,8 @@ int main() {
         
         // 提取最小外接矩形，过滤掉面积小于 500 像素的噪点
         PostProcessor::findBoundingBoxes(fgMask, bboxes, 500); 
+        // 2. ⭐ 调用框级融合算法，把碎框吸合（参数 20 表示相距 20 像素以内的框都会被合并）
+        PostProcessor::mergeBoundingBoxes(bboxes, 20);
 
         // ==========================================================
         // 3. 可视化绘制

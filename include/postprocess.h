@@ -19,4 +19,11 @@ public:
      * @param minArea 面积过滤阈值（滤除过小噪点）
      */
     static void findBoundingBoxes(const cv::Mat& mask, std::vector<cv::Rect>& bboxes, int minArea = 500);
+
+    /**
+     * @brief 框级融合算法：合并重叠或距离相近的矩形框
+     * @param bboxes 输入/输出的矩形框列表
+     * @param margin 允许的最大间距(像素)，小于这个间距的框会被吸合在一起 (默认20)
+     */
+    static void mergeBoundingBoxes(std::vector<cv::Rect>& bboxes, int margin = 20);
 };
