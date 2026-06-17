@@ -21,13 +21,38 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # 所有源文件统一列在这里，新增文件时补充即可
+# 1. 核心基类与配置 (如果你们采用了 Header-only，这里可以留空；若写了cpp则取消注释)
+set(CORE_SRC
+    src/core/config.cpp
+    src/core/base_detector.cpp
+)
+
+# 2. 核心算法层 (原 detectors.cpp 拆分后的产物)
+set(ALGORITHM_SRC
+    src/algorithms/frame_diff.cpp        # 成员A: 帧差法
+    src/algorithms/bg_subtractor.cpp     # 成员A: MOG2 / KNN
+    src/algorithms/optical_flow.cpp      # 成员A: LK 光流法
+    src/algorithms/hybrid_fusion.cpp     # A/B协作: 复合检测融合层
+)
+
+# 3. 外围处理与工程展现层
+set(MODULE_SRC
+    src/preprocess.cpp                   # 预处理
+    src/postprocess.cpp                  # 后处理 (形态学, NMS等)
+    src/evaluation.cpp                   # 量化评估 (PR曲线, IoU计算)
+    src/ui_viewer.cpp                    # UI面板与多窗口渲染
+)
+
+# ------------------------------------------------------------------
+# [生成可执行文件]
+# ------------------------------------------------------------------
+
+# 将所有分组的源文件和 main.cpp 一起编译
 add_executable(motion_detection
     main.cpp
-    src/preprocess.cpp
-    src/detectors.cpp
-    src/postprocess.cpp
-    src/evaluation.cpp
-    src/utils.cpp
+    ${CORE_SRC}
+    ${ALGORITHM_SRC}
+    ${MODULE_SRC}
 )
 
 target_link_libraries(motion_detection ${OpenCV_LIBS})
