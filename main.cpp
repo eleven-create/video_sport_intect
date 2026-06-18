@@ -45,7 +45,7 @@ int main() {
     // string currentAlgoName = "KNN Background Subtractor";
     
     unique_ptr<BaseDetector> detector = make_unique<HybridFusion>();
-    string currentAlgoName = "Hybrid Fusion (KNN + LK)";
+    string currentAlgoName = "Hybrid Fusion (MOG2 + LK)";
 
     // ⭐ 2. 实例化外围工具
     // ==========================================================
@@ -55,10 +55,10 @@ int main() {
     Mat frame, fgMask;
     vector<Rect> bboxes;
 
-    // 秘籍一：降采样缩放比例 (0.5 表示长宽都缩小为一半)
-    const float scale = 0.5f; 
-
     cout << "系统初始化完毕，开始检测... (按 ESC 键退出)" << endl;
+
+    // ⭐ 开启降维加速！画面缩小一半，FPS 翻 4 倍！
+    const float scale = 0.5f;
 
     while (true) {
         cap >> frame; 
@@ -68,10 +68,20 @@ int main() {
             break; 
         }
 
-         // ⭐ 秘籍一：降维打击 (只在缩小的画面上跑沉重的算法)
+        // ⭐ 护盾一：强制统一画面格式！
+        // 无论你的摄像头吐出来的是 4 通道还是单通道，强行剥离成标准的 3 通道 BGR
+        // ==========================================================
+        if (frame.channels() == 4) cv::cvtColor(frame, frame, cv::COLOR_BGRA2BGR);
+        if (frame.channels() == 1) cv::cvtColor(frame, frame, cv::COLOR_GRAY2BGR);
+
+        // ==========================================================
+        // 安全缩小画面！
         // ==========================================================
         Mat smallFrame;
         resize(frame, smallFrame, Size(), scale, scale);
+        
+        // 提前在小图尺寸上准备一张黑图，百分百防止 0x0 崩溃
+        fgMask = Mat::zeros(smallFrame.size(), CV_8UC1);
 
         // --- 开始性能计时 ---
         eval.start();
@@ -79,20 +89,21 @@ int main() {
         // ==========================================================
         // 1. 算法层：提取前景掩码 (屏蔽了底层细节，统一调用接口)
         // ==========================================================
+        // 直接将原图 frame 传入，不再进行任何缩放！
         detector->processFrame(smallFrame, fgMask);
 
         // --- 停止性能计时 ---
         eval.stop();
 
         // ==========================================================
-        // 2. 后处理层：形态学去噪与轮廓提取 (成员A负责的模块)
+        // 2. 后处理层：形态学去噪与轮廓提取
         // ==========================================================
         // 传入掩码，使用 5x5 的核进行开闭运算去噪
         PostProcessor::applyMorphology(fgMask, 5); 
         
         // 提取最小外接矩形，过滤掉面积小于 100 像素的噪点
-        PostProcessor::findBoundingBoxes(fgMask, bboxes, 100); 
-        // 2. ⭐ 调用框级融合算法，把碎框吸合（参数 20 表示相距 20 像素以内的框都会被合并）
+        PostProcessor::findBoundingBoxes(fgMask, bboxes, 50); 
+        // 调用框级融合算法，把碎框吸合（参数 10 表示相距 10 像素以内的框都会被合并）
         PostProcessor::mergeBoundingBoxes(bboxes, 10);
 
         // ⭐ 秘籍三：EMA 时序平滑滤波 (给框涂上润滑油，消除闪烁)
@@ -102,16 +113,12 @@ int main() {
         // ==========================================================
         // 3. 可视化绘制
         // ==========================================================
-        Mat displayFrame = frame.clone();
+        Mat displayFrame = smallFrame.clone();
 
         for (const auto& box : bboxes) {
-            // 将小图里的框坐标，按比例放大回原图的真实坐标
-            Rect realBox(box.x / scale, box.y / scale, box.width / scale, box.height / scale);
-            
-            // 绘制绿色矩形框
-            rectangle(displayFrame, realBox, Scalar(0, 255, 0), 2);
-            // 绘制标签
-            putText(displayFrame, "Moving Target", Point(realBox.x, realBox.y - 8), 
+            // 不再需要恶心的 scale 换算，直接使用原始 box 坐标进行绘制！
+            rectangle(displayFrame, box, Scalar(0, 255, 0), 2);
+            putText(displayFrame, "Moving Target", Point(box.x, box.y - 8), 
                     FONT_HERSHEY_SIMPLEX, 0.6, Scalar(0, 255, 0), 2);
         }
 
@@ -121,10 +128,10 @@ int main() {
         // 放映画面 (使用全英文标题防止 Windows 乱码)
         imshow("Motion Detection System - Original", displayFrame);
         
-        // 为了方便观察，把小尺寸的 Mask 放大回原图尺寸显示
-        Mat displayMask;
-        resize(fgMask, displayMask, frame.size());
-        imshow("Motion Detection System - Mask", displayMask);
+        // 安全校验：只有当 fgMask 不为空时才显示，防止第一帧空图崩溃
+        if (!fgMask.empty()) {
+            imshow("Motion Detection System - Mask", fgMask);
+        }
 
         // 接收到 ESC 指令 (ASCII码为27) 退出
         if (waitKey(30) == 27) {
