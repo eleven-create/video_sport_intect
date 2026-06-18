@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(motion_detection)
 
-add_compile_options(/utf-8)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_compile_options(/utf-8)
+
 
 # 【备用】如果CMake找不到OpenCV，就取消下面注释，改成你自己的OpenCV路径
 set(OpenCV_DIR "D:/opencv/build")
@@ -16,15 +20,14 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-# ===================== 源文件分组整理 =====================
-
-# 1. 核心基类与配置
+# 所有源文件统一列在这里，新增文件时补充即可
+# 1. 核心基类与配置 (如果你们采用了 Header-only，这里可以留空；若写了cpp则取消注释)
 set(CORE_SRC
     src/core/config.cpp
     src/core/base_detector.cpp
 )
 
-# 2. 核心算法层 (原 detectors.cpp 拆分后的产物，不再包含原老的 detectors.cpp)
+# 2. 核心算法层 (原 detectors.cpp 拆分后的产物)
 set(ALGORITHM_SRC
     src/algorithms/frame_diff.cpp        # 成员A: 帧差法
     src/algorithms/bg_subtractor.cpp     # 成员A: MOG2 / KNN
@@ -44,10 +47,9 @@ set(MODULE_SRC
 # [生成可执行文件]
 # ------------------------------------------------------------------
 
-# 将 main.cpp、未分类的 utils.cpp 以及所有分组的源文件一起编译
+# 将所有分组的源文件和 main.cpp 一起编译
 add_executable(motion_detection
     main.cpp
-    #src/utils.cpp
     ${CORE_SRC}
     ${ALGORITHM_SRC}
     ${MODULE_SRC}
@@ -73,4 +75,4 @@ add_custom_command(TARGET motion_detection POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${RELEASE_DLL_FILES}
     $<TARGET_FILE_DIR:motion_detection>
-) 
+)

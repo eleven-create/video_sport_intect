@@ -1,16 +1,18 @@
 #pragma once
 #include "core/base_detector.h"
+#include <vector>
 
-// 三帧差分检测器
-class FrameDiff : public BaseDetector {
+// LK (Lucas-Kanade) 稀疏光流检测器
+class OpticalFlowTracker : public BaseDetector {
 private:
-    cv::Mat prevFrame1; // 上一帧 t-1
-    cv::Mat prevFrame2; // 上上帧 t-2
-    int thresholdVal;   // 差分二值化阈值
+    cv::Mat prevGray;                  // 上一帧的灰度图
+    std::vector<cv::Point2f> prevPts;  // 上一帧的特征点
+    int maxCorners;                    // 允许提取的最大特征点数量
+    int trackInterval;                 // 每隔多少帧重新提取一次特征点
+    int frameCount;                    // 当前处理的帧数计数器
 
 public:
-    // 构造函数，可传入阈值（默认25）
-    FrameDiff(int thresh = 25);
+    OpticalFlowTracker(int maxPoints = 100, int interval = 10);
 
     // 实现基类接口
     void processFrame(const cv::Mat& frame, cv::Mat& fgMask) override;
