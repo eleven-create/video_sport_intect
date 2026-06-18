@@ -1,4 +1,5 @@
-#include "utils.h"
+#define NOMINMAX
+#include "core/utils.h"
 #include <windows.h> // 必须呼叫 Windows 底层 API
 #include <opencv2/opencv.hpp>
 #include <string>
