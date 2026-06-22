@@ -7,6 +7,9 @@ data/videos/
 *.jpg
 *.png
 
+draw/
+out/
+
 # 编译产物
 build/
 Debug/
