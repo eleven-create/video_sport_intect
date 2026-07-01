@@ -68,6 +68,7 @@ void Evaluator::printSummary() const {
     std::cout << "============================================\n";
     std::cout << "Precision (精确率) : " << std::fixed << std::setprecision(4) << getPrecision() * 100 << " %\n";
     std::cout << "Recall    (召回率) : " << std::fixed << std::setprecision(4) << getRecall() * 100 << " %\n";
+    std::cout << "FPS (处理速度): " << getFPS() << "\n";
     std::cout << "F1-Score  (综合得分) : " << std::fixed << std::setprecision(4) << getF1() * 100 << " %\n";
     std::cout << "--------------------------------------------\n";
     std::cout << "TP 像素点总数: " << TP << "\n";

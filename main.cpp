@@ -129,7 +129,7 @@ void runLiveDemo() {
 // 模式 2：CDnet 2014 数据集严谨跑分评估 (支持算法热切换)
 // ==========================================================
 void runDatasetEvaluation(int algoChoice) {
-    string datasetPath = "D:/code/VisualStudio/C++/video/project/data/CDnet2014/wetSnow/";
+    string datasetPath = "D:/code/VisualStudio/C++/video/project/data/CDnet2014/pedestrians/";
     int startFrame = 1, endFrame = 999999;
     ifstream roiFile(datasetPath + "temporalROI.txt");
     if (roiFile.is_open()) {
